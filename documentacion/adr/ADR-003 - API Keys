@@ -1,0 +1,357 @@
+# ADR-003 — Gestión de API Keys desde Configuración
+
+**Estado:** Aprobado
+**Fecha:** 2026-04-05
+**Decisor:** Software Architecture
+**Ámbito:** Configuración / Seguridad / LLM Orchestrator / UI Web / Audit
+
+## 1. Título
+
+Adoptar un módulo de **gestión de API Keys** accesible desde **Configuración → API Keys**, con almacenamiento seguro, uso exclusivo desde backend, validación controlada, enmascarado en UI, auditoría y soporte para rotación. Las API keys de OpenAI no deben exponerse en cliente ni compartirse entre personas; OpenAI recomienda usar variables de entorno o un servicio de gestión de secretos y rotar/monitorizar las claves cuando sea necesario. ([OpenAI Help Center][1])
+
+## 2. Contexto
+
+El sistema necesita usar al menos una API key para el servicio LLM y posiblemente otras integraciones futuras. Operativamente, el usuario debe poder administrar estas claves desde la opción **Configuración**, sin editar archivos manualmente ni tocar variables del sistema en cada cambio. A la vez, la arquitectura debe impedir que los secretos queden visibles en UI, repositorio o frontend, porque OpenAI recomienda no desplegar claves en entornos cliente, no subirlas al código fuente y mantenerlas en variables de entorno o servicios de gestión de secretos. ([OpenAI Help Center][1])
+
+## 3. Problema
+
+¿Cómo permitir la administración de API keys desde la UI de Configuración sin romper seguridad, trazabilidad y mantenibilidad, y dejando preparada la arquitectura para múltiples proveedores o múltiples claves por proveedor?
+
+## 4. Decisión
+
+Se adopta el siguiente diseño:
+
+### 4.1 Ubicación funcional
+
+La gestión de claves estará disponible en:
+
+**Configuración → API Keys**
+
+### 4.2 Patrón de gestión
+
+Las API keys se modelarán como un **catálogo persistente de credenciales lógicas**, pero el valor secreto no se devolverá nunca en claro a la UI. La UI administrará metadatos y operaciones, mientras el backend custodiará el secreto.
+
+### 4.3 Custodia del secreto
+
+El valor real de la clave se almacenará de una de estas dos formas:
+
+* **preferida:** referencia a un secret store o variable de entorno;
+* **aceptable para primera versión controlada:** valor cifrado en base de datos con clave maestra separada del código.
+
+OpenAI recomienda usar variables de entorno y considerar un servicio de gestión de claves para producción. ([OpenAI Help Center][1])
+
+### 4.4 Uso sólo desde backend
+
+Las API keys se usarán únicamente desde el backend o servicios de infraestructura del sistema. No se expondrán a la UI web, navegador ni cliente MT5. OpenAI indica que las claves no deben desplegarse en entornos cliente como navegadores o apps móviles. ([OpenAI Help Center][1])
+
+### 4.5 Visualización en UI
+
+La UI mostrará sólo metadatos, por ejemplo:
+
+* nombre lógico;
+* proveedor;
+* estado;
+* alias;
+* fecha de creación;
+* última validación;
+* última rotación;
+* valor enmascarado parcial.
+
+No se permitirá leer el secreto completo una vez guardado.
+
+### 4.6 Reemplazo, no lectura
+
+Si el usuario necesita cambiar una clave, la operación será **reemplazar**, no “mostrar y editar” el valor anterior.
+
+### 4.7 Soporte multi-key
+
+El sistema soportará múltiples claves por proveedor. En la primera versión, se permitirá marcar una clave como:
+
+* `ACTIVE`
+* `INACTIVE`
+* `ARCHIVED`
+
+y opcionalmente una clave por defecto por proveedor/entorno.
+
+### 4.8 Validación
+
+Cada clave podrá validarse desde UI mediante una prueba controlada desde backend:
+
+* formato mínimo;
+* presencia del secreto;
+* prueba de conectividad opcional;
+* resultado auditado.
+
+### 4.9 Auditoría y rotación
+
+Toda creación, reemplazo, activación, desactivación, archivado y validación quedará auditada. OpenAI recomienda monitorizar uso y rotar claves si hay riesgo de exposición o abuso. ([OpenAI Help Center][1])
+
+## 5. Reglas de negocio adoptadas
+
+### RN-API-01
+
+La gestión de API keys se realiza desde **Configuración → API Keys**.
+
+### RN-API-02
+
+La UI nunca debe mostrar el secreto completo.
+
+### RN-API-03
+
+Las claves no pueden ser usadas desde frontend ni cliente.
+
+### RN-API-04
+
+Las claves deben almacenarse como referencia a secret store/variable de entorno o cifradas en backend.
+
+### RN-API-05
+
+Debe permitirse registrar varias claves por proveedor.
+
+### RN-API-06
+
+Debe poder definirse una clave predeterminada por proveedor y entorno.
+
+### RN-API-07
+
+No debe haber dos claves predeterminadas activas para el mismo proveedor y entorno.
+
+### RN-API-08
+
+Toda modificación debe quedar auditada.
+
+### RN-API-09
+
+La rotación se implementa como reemplazo controlado de la clave.
+
+### RN-API-10
+
+Una clave archivada o inactiva no puede ser usada por LLM Orchestrator ni por integraciones runtime.
+
+### RN-API-11
+
+Si una clave falla validación o produce errores persistentes, debe poder marcarse como `INVALID` o `UNAVAILABLE`.
+
+### RN-API-12
+
+Las claves no deben compartirse entre personas; OpenAI indica que cada miembro debe usar su propia clave en su cuenta y que compartir claves no está soportado. ([OpenAI Help Center][1])
+
+## 6. Modelo de datos adoptado
+
+### 6.1 Entidad principal `ApiCredential`
+
+Campos recomendados:
+
+* `id`
+* `provider` (`OPENAI`, otros futuros)
+* `credential_name`
+* `environment_type` (`DEV`, `TEST`, `PAPER`, `LIVE`)
+* `secret_storage_mode` (`ENV_REF`, `SECRET_STORE_REF`, `ENCRYPTED_DB`)
+* `secret_ref`
+* `secret_masked`
+* `is_enabled`
+* `is_default_for_provider_env`
+* `validation_status`
+* `last_validation_at`
+* `last_rotation_at`
+* `lifecycle_status`
+* `created_at`
+* `updated_at`
+* `archived_at`
+
+### 6.2 Estados recomendados
+
+`validation_status`:
+
+* `UNKNOWN`
+* `VALID`
+* `INVALID`
+* `UNAVAILABLE`
+* `FORMAT_ERROR`
+
+`lifecycle_status`:
+
+* `ACTIVE`
+* `INACTIVE`
+* `ARCHIVED`
+
+### 6.3 Auditoría
+
+`api_credential_audit_log`:
+
+* `id`
+* `credential_id`
+* `action`
+* `old_value`
+* `new_value`
+* `changed_by`
+* `changed_at`
+* `reason`
+
+## 7. Comportamiento funcional adoptado
+
+### 7.1 Crear API key
+
+1. Usuario entra a **Configuración → API Keys**.
+2. Selecciona **Agregar clave**.
+3. Ingresa:
+
+   * proveedor;
+   * nombre lógico;
+   * entorno;
+   * secreto o referencia;
+   * modo de almacenamiento.
+4. El sistema valida entrada.
+5. El backend persiste metadatos y guarda el secreto de forma segura.
+6. La UI muestra sólo versión enmascarada.
+
+### 7.2 Validar API key
+
+1. Usuario selecciona **Validar**.
+2. Backend ejecuta validación controlada.
+3. El resultado se registra y se refleja en UI.
+
+### 7.3 Activar/desactivar
+
+1. Usuario habilita o deshabilita una clave.
+2. El sistema valida reglas de unicidad por proveedor/entorno.
+3. Se audita el cambio.
+
+### 7.4 Rotar clave
+
+1. Usuario selecciona **Reemplazar/Rotar**.
+2. Backend recibe nuevo secreto.
+3. El sistema actualiza `last_rotation_at`.
+4. El secreto anterior deja de ser usado.
+5. Se registra auditoría.
+
+OpenAI recomienda rotar la clave si hay sospecha de filtración y revisar el uso asociado. ([OpenAI Help Center][1])
+
+## 8. Ubicación en la arquitectura
+
+### UI Web
+
+Pantalla:
+
+**Configuración → API Keys**
+
+Funciones:
+
+* listar claves;
+* crear;
+* validar;
+* activar/desactivar;
+* marcar predeterminada;
+* rotar;
+* archivar.
+
+### Configuration / Control Plane
+
+Responsable de:
+
+* persistir metadatos;
+* aplicar reglas de unicidad;
+* publicar configuración activa.
+
+### Secret Management Adapter
+
+Responsable de:
+
+* resolver secretos reales;
+* cifrar/descifrar si aplica;
+* integrarse con environment variables o secret store.
+
+### LLM Orchestrator
+
+Responsable de:
+
+* resolver la credencial activa del proveedor;
+* usarla sólo en backend;
+* manejar errores de autenticación.
+
+### Audit Layer
+
+Responsable de:
+
+* registrar todas las operaciones administrativas y validaciones.
+
+## 9. Alternativas consideradas
+
+### Alternativa A — Guardar la API key sólo en `.env` sin UI
+
+**Rechazada.**
+Sirve para una PoC, pero no escala para administración operativa, auditoría, múltiples claves ni rotación controlada.
+
+### Alternativa B — Guardar la clave en texto plano en base y mostrarla en UI
+
+**Rechazada.**
+Contradice buenas prácticas de seguridad y exposición mínima de secretos. OpenAI recomienda variables de entorno o servicios de gestión de claves, y nunca exponer la clave en cliente o repositorio. ([OpenAI Help Center][1])
+
+### Alternativa C — Poner la clave directamente en frontend o MT5 client-side
+
+**Rechazada.**
+OpenAI indica que las claves no deben desplegarse en entornos cliente. ([OpenAI Help Center][1])
+
+### Alternativa D — Una sola clave global por sistema
+
+**Rechazada.**
+Limita entornos, rotación y escalabilidad. Además, OpenAI recomienda claves únicas por miembro/equipo y control de permisos por clave. ([OpenAI Help Center][1])
+
+## 10. Consecuencias
+
+### Positivas
+
+* administración centralizada desde Configuración;
+* soporte multi-key;
+* mejor seguridad;
+* rotación controlada;
+* trazabilidad y auditoría;
+* preparación para múltiples proveedores.
+
+### Negativas
+
+* más complejidad que un `.env` simple;
+* necesidad de gestión de secretos;
+* necesidad de reglas de validación y fallback.
+
+## 11. Criterios de aceptación arquitectónica
+
+La decisión se considera correctamente implementada cuando:
+
+1. Existe una pantalla **Configuración → API Keys**.
+2. Se pueden registrar varias API keys por proveedor.
+3. El secreto no se muestra en claro.
+4. La clave sólo se usa desde backend.
+5. Se puede validar una clave desde UI.
+6. Se puede activar/desactivar una clave.
+7. Se puede definir una clave predeterminada por proveedor/entorno.
+8. Toda acción queda auditada.
+9. La rotación se puede ejecutar sin leer el valor anterior.
+10. Una clave inválida o archivada no puede ser usada por runtime.
+
+## 12. Recomendaciones de implementación
+
+Para la primera versión, la lista mínima en UI debería ser:
+
+* nombre lógico;
+* proveedor;
+* entorno;
+* estado;
+* predeterminada;
+* última validación;
+* última rotación;
+* valor enmascarado.
+
+Los endpoints sugeridos serían:
+
+* `GET /config/api-keys`
+* `POST /config/api-keys`
+* `POST /config/api-keys/{id}/validate`
+* `PATCH /config/api-keys/{id}/enable`
+* `PATCH /config/api-keys/{id}/disable`
+* `POST /config/api-keys/{id}/rotate`
+* `POST /config/api-keys/{id}/archive`
+
+## 13. Resumen ejecutivo
+
+Se adopta una gestión de **API Keys desde Configuración**, con custodia segura en backend, sin exposición del secreto en UI, soporte multi-key, validación, rotación y auditoría completa. Esta decisión alinea seguridad, operabilidad y evolución futura del sistema, y sigue las recomendaciones oficiales de OpenAI sobre no exponer claves en cliente, usar variables de entorno o servicios de gestión de secretos, y rotar/monitorizar las claves cuando sea necesario.

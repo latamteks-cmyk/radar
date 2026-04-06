@@ -1,0 +1,314 @@
+Listado de rutas de carpetas
+El número de serie del volumen es 20B9-5593
+C:\USERS\GOMEZ\.GEMINI\ANTIGRAVITY\SCRATCH\RADAR2\SRC
+|   main.py
+|   __init__.py
+|   
++---application
+|   |   __init__.py
+|   |   
+|   +---asset_catalog
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---audit
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---configuration
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---event_intelligence
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---execution
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   +---modes
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---indicator_engine
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   +---indicators
+|   |   |   |   __init__.py
+|   |   |   |   
+|   |   |   +---momentum
+|   |   |   |       __init__.py
+|   |   |   |       
+|   |   |   +---trend
+|   |   |   |       __init__.py
+|   |   |   |       
+|   |   |   \---volatility
+|   |   |           __init__.py
+|   |   |           
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---llm
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---ml
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   +---models
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---order_monitoring
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   +---rules
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---pivot_engine
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   +---services
+|   |   |       __init__.py
+|   |   |       
+|   |   \---strategies
+|   |           __init__.py
+|   |           
+|   +---policy_gate
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---prompt_templates
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---radar
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   +---evaluators
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---risk
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   +---policies
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---scheduler
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   +---jobs
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   +---signal_intelligence
+|   |   |   __init__.py
+|   |   |   
+|   |   +---dto
+|   |   |       __init__.py
+|   |   |       
+|   |   \---services
+|   |           __init__.py
+|   |           
+|   \---triggers
+|       |   __init__.py
+|       |   
+|       +---base
+|       |       __init__.py
+|       |       
+|       +---dto
+|       |       __init__.py
+|       |       
+|       +---factory
+|       |       __init__.py
+|       |       
+|       +---implementations
+|       |       __init__.py
+|       |       
+|       \---registry
+|               __init__.py
+|               
++---domain
+|   |   __init__.py
+|   |   
+|   +---entities
+|   |       __init__.py
+|   |       
+|   +---interfaces
+|   |       __init__.py
+|   |       
+|   \---value_objects
+|           __init__.py
+|           
++---infrastructure
+|   |   __init__.py
+|   |   
+|   +---cache
+|   |       __init__.py
+|   |       
+|   +---config
+|   |       settings.py
+|   |       __init__.py
+|   |       
+|   +---events
+|   |       __init__.py
+|   |       
+|   +---logging
+|   |       structured_logger.py
+|   |       __init__.py
+|   |       
+|   +---mt5
+|   |   |   __init__.py
+|   |   |   
+|   |   +---adapter
+|   |   |       __init__.py
+|   |   |       
+|   |   \---dto
+|   |           __init__.py
+|   |           
+|   \---persistence
+|       |   __init__.py
+|       |   
+|       +---models
+|       |       __init__.py
+|       |       
+|       \---repositories
+|               __init__.py
+|               
+\---presentation
+    |   __init__.py
+    |   
+    +---api
+    |   |   __init__.py
+    |   |   
+    |   +---middleware
+    |   |       __init__.py
+    |   |       
+    |   +---routes
+    |   |       __init__.py
+    |   |       
+    |   \---schemas
+    |           __init__.py
+    |           
+    \---web
+        |   __init__.py
+        |   
+        +---public
+        |       __init__.py
+        |       
+        \---src
+            |   __init__.py
+            |   
+            +---components
+            |       __init__.py
+            |       
+            +---hooks
+            |       __init__.py
+            |       
+            +---pages
+            |   |   __init__.py
+            |   |   
+            |   +---assets
+            |   |       __init__.py
+            |   |       
+            |   +---audit
+            |   |       __init__.py
+            |   |       
+            |   +---config
+            |   |       __init__.py
+            |   |       
+            |   +---dashboard
+            |   |       __init__.py
+            |   |       
+            |   +---orders
+            |   |       __init__.py
+            |   |       
+            |   +---radar
+            |   |       __init__.py
+            |   |       
+            |   +---signals
+            |   |       __init__.py
+            |   |       
+            |   \---triggers
+            |           __init__.py
+            |           
+            +---styles
+            |       __init__.py
+            |       
+            \---utils
+                    __init__.py
+                    

@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: radar-postgres
+    environment:
+      POSTGRES_DB: radar_trading
+      POSTGRES_USER: radar_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-radar_password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U radar_user -d radar_trading"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - radar-network
+
+  # Redis Cache (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: radar-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - radar-network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: radar-backend
+    environment:
+      - APP_ENV=${APP_ENV:-development}
+      - DEBUG=${DEBUG:-True}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=radar_trading
+      - DB_USER=radar_user
+      - DB_PASSWORD=${DB_PASSWORD:-radar_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MT5_PATH=${MT5_PATH}
+      - MT5_LOGIN=${MT5_LOGIN}
+      - MT5_PASSWORD=${MT5_PASSWORD}
+      - MT5_SERVER=${MT5_SERVER}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.openai.com/v1}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4}
+      - TRADING_MODE=${TRADING_MODE:-paper}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./src:/app/src
+      - ./config:/app/config
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - radar-network
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./src/presentation/web
+      dockerfile: ../../../docker/Dockerfile.frontend
+    container_name: radar-frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:${BACKEND_PORT:-8000}/api/v1
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./src/presentation/web:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - radar-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  radar-network:
+    driver: bridge
